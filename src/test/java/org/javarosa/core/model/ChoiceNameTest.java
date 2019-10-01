@@ -60,4 +60,11 @@ public class ChoiceNameTest {
         scenario.answer("/jr-choice-name/city", "grenoble");
         assertThat(scenario.answerOf("/jr-choice-name/city_name"), is(nullValue()));
     }
+
+    @Test public void cocotero() {
+        Scenario scenario = Scenario.init(r("jr-choice-name.xml"));
+        scenario.answer("/jr-choice-name/cocotero_a", "a");
+        scenario.answer("/jr-choice-name/cocotero_b", "b");
+        assertThat(scenario.answerOf("/jr-choice-name/cocotero_name"), is("Cocotero a-b"));
+    }
 }
