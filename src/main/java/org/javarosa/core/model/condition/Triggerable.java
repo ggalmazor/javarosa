@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.javarosa.core.model.QuickTriggerable;
 import org.javarosa.core.model.instance.FormInstance;
@@ -61,14 +60,16 @@ public abstract class Triggerable implements Externalizable {
     protected Set<TreeReference> targets;
 
     /**
-     * Current reference which is the "Basis" of the trigerrables being evaluated. This is the highest
+     * Current reference which is the "Basis" of the trigerrables being
+     * evaluated. This is the highest
      * common root of all of the targets being evaluated.
      */
     protected TreeReference contextRef;  //generic ref used to turn triggers into absolute references
 
     // TODO Study why we really need this property. Looking at mutators, it should always equal the contextRef.
     /**
-     * The first context provided to this triggerable before reducing to the common root.
+     * The first context provided to this triggerable before reducing to the
+     * common root.
      */
     protected TreeReference originalContextRef;
 
@@ -110,29 +111,6 @@ public abstract class Triggerable implements Externalizable {
             absTriggers.add(r.anchor(originalContextRef));
         }
         return absTriggers;
-    }
-
-    /**
-     * Searches in the triggers of this Triggerable, trying to find the ones that are
-     * contained in the given list of contextualized refs.
-     *
-     * @param firedAnchorsMap a map of absolute refs
-     * @return a list of affected nodes.
-     */
-    public List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap) {
-        List<TreeReference> affectedTriggers = new ArrayList<>(0);
-
-        Set<TreeReference> triggers = this.getTriggers();
-        for (TreeReference trigger : triggers) {
-            List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
-            if (firedAnchors == null) {
-                continue;
-            }
-
-            affectedTriggers.addAll(firedAnchors);
-        }
-
-        return affectedTriggers;
     }
 
     public TreeReference contextualizeContextRef(TreeReference anchorRef) {

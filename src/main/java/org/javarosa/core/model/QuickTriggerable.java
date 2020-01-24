@@ -1,7 +1,6 @@
 package org.javarosa.core.model;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.javarosa.core.model.condition.Condition;
 import org.javarosa.core.model.condition.EvaluationContext;
@@ -12,10 +11,13 @@ import org.javarosa.core.model.instance.TreeReference;
 import org.javarosa.debug.EvaluationResult;
 
 /**
- * This is a thin wrapper class over Triggerable that provides quicker implementation of the equals() method.
+ * This is a thin wrapper class over Triggerable that provides quicker
+ * implementation of the equals() method.
  * <p>
- * Triggerable has a deep equals() comparison operator, required while building the DAG. Once the DAG gets
- * built, object references are enough, since no new Triggerables should be created after that.
+ * Triggerable has a deep equals() comparison operator, required while building
+ * the DAG. Once the DAG gets
+ * built, object references are enough, since no new Triggerables should be
+ * created after that.
  */
 public final class QuickTriggerable {
     private final Triggerable triggerable;
@@ -36,10 +38,6 @@ public final class QuickTriggerable {
 
     public boolean isRecalculate() {
         return triggerable instanceof Recalculate;
-    }
-
-    public List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchors) {
-        return triggerable.findAffectedTriggers(firedAnchors);
     }
 
     public TreeReference contextualizeContextRef(TreeReference anchorRef) {
@@ -96,7 +94,8 @@ public final class QuickTriggerable {
     }
 
     /**
-     * Quicker implementation of Triggerable.equals() that only consider object references.
+     * Quicker implementation of Triggerable.equals() that only consider object
+     * references.
      */
     @Override
     public boolean equals(Object obj) {
@@ -106,10 +105,13 @@ public final class QuickTriggerable {
     }
 
     /**
-     * Returns the hashCode of the wrapped Triggerable object based on {@link System#identityHashCode(Object)},
-     * which should be quicker than the original hashCode method in Triggerable.
+     * Returns the hashCode of the wrapped Triggerable object based on {@link
+     * System#identityHashCode(Object)},
+     * which should be quicker than the original hashCode method in
+     * Triggerable.
      * <p>
-     * The actual return value is computed once during object creation at {@link QuickTriggerable#of(Triggerable)}
+     * The actual return value is computed once during object creation at {@link
+     * QuickTriggerable#of(Triggerable)}
      */
     @Override
     public int hashCode() {
