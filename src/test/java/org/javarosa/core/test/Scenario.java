@@ -24,6 +24,8 @@ import static java.nio.file.Files.newInputStream;
 import static java.nio.file.Files.newOutputStream;
 import static java.nio.file.Files.write;
 import static java.nio.file.StandardOpenOption.CREATE;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.javarosa.core.model.instance.TreeReference.CONTEXT_ABSOLUTE;
 import static org.javarosa.core.model.instance.TreeReference.INDEX_TEMPLATE;
 import static org.javarosa.core.model.instance.TreeReference.REF_ABSOLUTE;
@@ -41,13 +43,15 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.javarosa.core.model.CoreModelModule;
 import org.javarosa.core.model.FormDef;
@@ -56,6 +60,7 @@ import org.javarosa.core.model.IFormElement;
 import org.javarosa.core.model.QuestionDef;
 import org.javarosa.core.model.SelectChoice;
 import org.javarosa.core.model.condition.EvaluationContext;
+import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.data.IntegerData;
 import org.javarosa.core.model.data.MultipleItemsData;
@@ -65,6 +70,7 @@ import org.javarosa.core.model.instance.InstanceInitializationFactory;
 import org.javarosa.core.model.instance.TreeElement;
 import org.javarosa.core.model.instance.TreeReference;
 import org.javarosa.core.services.PrototypeManager;
+import org.javarosa.core.services.locale.Localizer;
 import org.javarosa.core.util.JavaRosaCoreModule;
 import org.javarosa.core.util.XFormsElement;
 import org.javarosa.core.util.externalizable.DeserializationException;
@@ -113,6 +119,8 @@ public class Scenario {
     private static final Logger log = LoggerFactory.getLogger(Scenario.class);
     private final FormDef formDef;
     private final FormEntryController formEntryController;
+    private Consumer<String> jumpCallback = __ -> {
+    };
 
     private Scenario(FormDef formDef, FormEntryController formEntryController) {
         this.formDef = formDef;
@@ -176,7 +184,7 @@ public class Scenario {
         createMissingRepeats(xPath);
         TreeElement element = Objects.requireNonNull(resolve(xPath));
 
-        List<Selection> selections = Arrays.stream(selectionValues).map(Selection::new).collect(Collectors.toList());
+        List<Selection> selections = Arrays.stream(selectionValues).map(Selection::new).collect(toList());
         formDef.setValue(new MultipleItemsData(selections), element.getRef(), true);
     }
 
@@ -199,72 +207,82 @@ public class Scenario {
         return this;
     }
 
-    /**
-     * Answers the current question.
-     */
-    public AnswerResult answer(String value) {
+    private AnswerResult answer(IAnswerData data) {
         FormIndex formIndex = formEntryController.getModel().getFormIndex();
-        StringData data = new StringData(value);
         IFormElement child = formDef.getChild(formIndex);
-        String reference = "";
-        try {
-            reference = Optional.ofNullable(child.getBind()).map(idr -> (TreeReference) idr.getReference()).map(Object::toString).map(s -> "ref:" + s).orElse("");
-        } catch (RuntimeException e) {
-            // Do nothing. Probably "method not implemented" in FormDef.getBind()
-        }
-        log.info("Answer {} at {}", data, reference);
-        int jrCode = formEntryController.answerQuestion(formIndex, data, true);
-        return AnswerResult.from(jrCode);
+        log.info("Answer {} at {}", data, prefixIfNotEmpty("ref:", getReference(child)));
+        return AnswerResult.from(formEntryController.answerQuestion(formIndex, data, true));
+    }
+
+    public AnswerResult answer(String value) {
+        return answer(new StringData(value));
     }
 
     public AnswerResult answer(int value) {
-        FormIndex formIndex = formEntryController.getModel().getFormIndex();
-        IntegerData data = new IntegerData(value);
-        IFormElement child = formDef.getChild(formIndex);
-        String reference = "";
-        try {
-            reference = Optional.ofNullable(child.getBind()).map(idr -> (TreeReference) idr.getReference()).map(Object::toString).map(s -> "ref:" + s).orElse("");
-        } catch (RuntimeException e) {
-            // Do nothing. Probably "method not implemented" in FormDef.getBind()
-        }
-        log.info("Answer {} at {}", data, reference);
-        int jrCode = formEntryController.answerQuestion(formIndex, data, true);
-        return AnswerResult.from(jrCode);
+        return answer(new IntegerData(value));
     }
 
     public AnswerResult answer(char value) {
-        FormIndex formIndex = formEntryController.getModel().getFormIndex();
-        StringData data = new StringData(String.valueOf(value));
-        IFormElement child = formDef.getChild(formIndex);
-        String reference = "";
-        try {
-            reference = Optional.ofNullable(child.getBind()).map(idr -> (TreeReference) idr.getReference()).map(Object::toString).map(s -> "ref:" + s).orElse("");
-        } catch (RuntimeException e) {
-            // Do nothing. Probably "method not implemented" in FormDef.getBind()
-        }
-        log.info("Answer {} at {}", data, reference);
-        int jrCode = formEntryController.answerQuestion(formIndex, data, true);
-        return AnswerResult.from(jrCode);
+        return answer(new StringData(String.valueOf(value)));
+    }
+
+    public AnswerResult answer(LocalDate value) {
+        return answer(new DateData(Date.from(value.atStartOfDay().atOffset(OffsetDateTime.now().getOffset()).toInstant())));
     }
 
     /**
      * Jumps to next event
-     * </ul>
      */
     public void next() {
         int i = formEntryController.stepToNextEvent();
         String jumpResult = decodeJumpResult(i);
         FormIndex formIndex = formEntryController.getModel().getFormIndex();
         IFormElement child = formDef.getChild(formIndex);
-        String labelInnerText = Optional.ofNullable(child.getLabelInnerText()).map(s -> " " + s).orElse("");
-        String textId = Optional.ofNullable(child.getTextID()).map(s -> " itext:" + s).orElse("");
-        String reference = "";
+        String humanFriendlyTrace = String.format(
+            "Jump to %s%s%s%s",
+            jumpResult,
+            prefixIfNotEmpty(" ", getLabel(child)),
+            prefixIfNotEmpty(" ", getIText(child)),
+            prefixIfNotEmpty(" ref:", getReference(child)));
+        jumpCallback.accept(humanFriendlyTrace);
+        log.info(humanFriendlyTrace);
+    }
+
+    public String prefixIfNotEmpty(String prefix, String text) {
+        return text.isEmpty() ? "" : prefix + text;
+    }
+
+    public String getReference(IFormElement child) {
         try {
-            reference = Optional.ofNullable(child.getBind()).map(idr -> (TreeReference) idr.getReference()).map(Object::toString).map(s -> " ref:" + s).orElse("");
+            return Optional.ofNullable(child.getBind())
+                .map(ref -> (TreeReference) ref.getReference())
+                .map(Object::toString)
+                .orElse("");
         } catch (RuntimeException e) {
-            // Do nothing. Probably "method not implemented" in FormDef.getBind()
+            return "";
         }
-        log.info("Jump to {}{}{}{}", jumpResult, labelInnerText, textId, reference);
+
+    }
+
+    public String getLabel(IFormElement child) {
+        return Optional.ofNullable(child.getLabelInnerText()).orElse("");
+    }
+
+    public String getIText(IFormElement element) {
+        Localizer localizer = formDef.getLocalizer();
+        String textId = element.getTextID();
+
+        if (textId == null || localizer == null)
+            return "";
+        return Optional.ofNullable(localizer.getText(textId))
+            .map(this::oneLineTrim)
+            .orElse("");
+    }
+
+    private String oneLineTrim(String text) {
+        return Stream.of(text.split("\n"))
+            .map(String::trim)
+            .collect(joining(" "));
     }
 
     /**
@@ -513,7 +531,7 @@ public class Scenario {
 
         List<TreeElement> nonTemplateChildren = childrenOf(node).stream()
             .filter(this::isNotTemplate)
-            .collect(Collectors.toList());
+            .collect(toList());
 
         for (TreeElement child : nonTemplateChildren) {
             Optional<TreeElement> result = getFirstDescendantWithName(child, name);
@@ -549,7 +567,7 @@ public class Scenario {
 
     private void jump(FormIndex indexOf) {
         int result = formEntryController.jumpToIndex(indexOf);
-        log.debug("Jumped to " + decodeJumpResult(result));
+        log.debug(prefixIfNotEmpty("Jumped to ", decodeJumpResult(result)));
     }
 
     private String decodeJumpResult(int code) {
@@ -582,7 +600,7 @@ public class Scenario {
         IFormElement child = formDef.getChild(formIndex);
         String reference = "";
         try {
-            reference = Optional.ofNullable(child.getBind()).map(idr -> (TreeReference) idr.getReference()).map(Object::toString).map(s -> "ref:" + s).orElse("");
+            reference = Optional.ofNullable(child.getBind()).map(idr -> (TreeReference) idr.getReference()).map(Object::toString).map(s -> prefixIfNotEmpty("ref:", s)).orElse("");
         } catch (RuntimeException e) {
             // Do nothing. Probably "method not implemented" in FormDef.getBind()
         }
@@ -597,6 +615,25 @@ public class Scenario {
 
     public QuestionDef getQuestionAtIndex() {
         return formEntryController.getModel().getQuestionPrompt().getQuestion();
+    }
+
+    public FormDef getFormDef() {
+        return formDef;
+    }
+
+    public void next(int amount) {
+        while (amount-- > 0)
+            next();
+    }
+
+    public boolean atQuestion() {
+        return formDef.getChild(formEntryController.getModel().getFormIndex()) instanceof QuestionDef;
+    }
+
+    public String getQuestionRefAtIndex() {
+        if (!atQuestion())
+            throw new RuntimeException("Not at question");
+        return ((TreeReference) getQuestionAtIndex().getBind().getReference()).toString(false, false);
     }
 
     public enum AnswerResult {
@@ -618,6 +655,11 @@ public class Scenario {
 
     public Scenario onDagEvent(Consumer<Event> callback) {
         formDef.setEventNotifier(callback::accept);
+        return this;
+    }
+
+    public Scenario onJump(Consumer<String> callback) {
+        jumpCallback = callback;
         return this;
     }
 

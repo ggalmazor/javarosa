@@ -17,6 +17,7 @@
 package org.javarosa.core.model.condition;
 
 import org.javarosa.core.model.instance.FormInstance;
+import org.javarosa.xpath.XPathConditional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.javarosa.core.util.externalizable.DeserializationException;
@@ -36,13 +37,13 @@ import static org.javarosa.xform.parse.XFormParser.ITEXT_OPEN;
 
 public class Constraint implements Externalizable {
     private static final Logger logger = LoggerFactory.getLogger(Constraint.class);
-    public IConditionExpr constraint;
+    public XPathConditional constraint;
     private String constraintMsg;
     private XPathExpression xPathConstraintMsg;
 
     public Constraint () { }
 
-    public Constraint (IConditionExpr constraint, String constraintMsg) {
+    public Constraint (XPathConditional constraint, String constraintMsg) {
         this.constraint = constraint;
         this.constraintMsg = constraintMsg == null ? null : constraintMsg.trim();
         attemptConstraintCompile();
@@ -82,7 +83,7 @@ public class Constraint implements Externalizable {
     }
 
     public void readExternal(DataInputStream in, PrototypeFactory pf) throws IOException, DeserializationException {
-        constraint = (IConditionExpr)ExtUtil.read(in, new ExtWrapTagged(), pf);
+        constraint = (XPathConditional)ExtUtil.read(in, new ExtWrapTagged(), pf);
         constraintMsg = ExtUtil.nullIfEmpty(ExtUtil.readString(in));
         attemptConstraintCompile();
     }

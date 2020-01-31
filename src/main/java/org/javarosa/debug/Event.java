@@ -30,7 +30,7 @@ import java.util.List;
 public class Event {
 
   private final String message;
-  private final List<EvaluationResult> evaluationResults;
+  public final List<EvaluationResult> evaluationResults;
 
   private static int id = 0;
 

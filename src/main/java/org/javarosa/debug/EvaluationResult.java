@@ -18,6 +18,8 @@
 
 package org.javarosa.debug;
 
+import org.javarosa.core.model.condition.Constraint;
+import org.javarosa.core.model.condition.Triggerable;
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.instance.TreeReference;
 
@@ -28,41 +30,47 @@ import org.javarosa.core.model.instance.TreeReference;
  */
 public class EvaluationResult {
 
-  private final TreeReference affectedRef;
-  private final Object value;
+    private final TreeReference affectedRef;
+    private final Object value;
+    public final Triggerable triggerable;
+    public final Constraint constraint;
+    public final TreeReference constraintRef;
 
-  public EvaluationResult(TreeReference affectedRef, Object value) {
-    this.affectedRef = affectedRef;
-    this.value = value;
-  }
-
-  public TreeReference getAffectedRef() {
-    return affectedRef;
-  }
-
-  public Object getValue() {
-    return value;
-  }
-
-  @Override
-  public String toString() {
-    if (getAffectedRef() == null) {
-      return "";
-    } else {
-      StringBuilder sb = new StringBuilder();
-      String refStr = getAffectedRef().toShortString();
-      sb.append(refStr);
-      if (value != null) {
-        sb.append(" (");
-        if (value instanceof IAnswerData) {
-          sb.append(((IAnswerData) value).getDisplayText());
-        } else {
-          sb.append(String.valueOf(value));
-        }
-        sb.append(")");
-      }
-      return sb.toString();
+    public EvaluationResult(TreeReference affectedRef, Object value, Triggerable triggerable, Constraint constraint, TreeReference constraintRef) {
+        this.affectedRef = affectedRef;
+        this.value = value;
+        this.triggerable = triggerable;
+        this.constraint = constraint;
+        this.constraintRef = constraintRef;
     }
-  }
+
+    public TreeReference getAffectedRef() {
+        return affectedRef;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        if (getAffectedRef() == null) {
+            return "";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            String refStr = getAffectedRef().toShortString();
+            sb.append(refStr);
+            if (value != null) {
+                sb.append(" (");
+                if (value instanceof IAnswerData) {
+                    sb.append(((IAnswerData) value).getDisplayText());
+                } else {
+                    sb.append(String.valueOf(value));
+                }
+                sb.append(")");
+            }
+            return sb.toString();
+        }
+    }
 }
 

@@ -149,7 +149,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      */
     private List<IConditionExpr> outputFragments;
 
-    private TriggerableDag dagImpl;
+    TriggerableDag dagImpl;
 
     private EvaluationContext exprEvalContext;
 
@@ -236,7 +236,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * Get an instance based on a name
      *
      * @param name string name
-     * @return
      */
     public DataInstance getNonMainInstance(String name) {
         HashMap<String, DataInstance> formInstances = getFormInstances();
@@ -306,9 +305,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * <p/>
      * Ignore 'new-repeat' node for now; just return/stop at ref to
      * yet-to-be-created repeat node (similar to repeats that already exist)
-     *
-     * @param index
-     * @return
      */
     public List<IFormElement> explodeIndex(FormIndex index) {
         List<Integer> indexes = new ArrayList<>();
@@ -454,9 +450,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * Deletes the inner-most repeat that this node belongs to and returns the
      * corresponding FormIndex. Behavior is currently undefined if you call this
      * method on a node that is not contained within a repeat.
-     *
-     * @param index
-     * @return
      */
     public FormIndex deleteRepeat(FormIndex index) {
         List<Integer> indexes = new ArrayList<>();
@@ -734,7 +727,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
 
         boolean result = c.constraint.eval(mainInstance, ec);
 
-        getEventNotifier().publishEvent(new Event("Constraint", new EvaluationResult(ref, result)));
+        getEventNotifier().publishEvent(new Event("Constraint", new EvaluationResult(ref, result, null, c, ref)));
 
         return result;
     }
@@ -979,7 +972,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      *                used to determine the values to be chosen from
      */
     public void populateDynamicChoices(ItemsetBinding itemset, TreeReference curQRef) {
-        getEventNotifier().publishEvent(new Event("Dynamic choices", new EvaluationResult(curQRef, null)));
+        getEventNotifier().publishEvent(new Event("Dynamic choices", new EvaluationResult(curQRef, null, null, null, null)));
 
         List<SelectChoice> choices = new ArrayList<>();
 
@@ -1188,9 +1181,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * that should be used for deserialization.
      *
      * @param dis - the stream to read from
-     * @throws IOException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      */
     @Override
     public void readExternal(DataInputStream dis, PrototypeFactory pf) throws IOException,
@@ -1312,7 +1302,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * Writes the form definition object to the supplied stream.
      *
      * @param dos - the stream to write to
-     * @throws IOException
      */
     @Override
     public void writeExternal(DataOutputStream dos) throws IOException {

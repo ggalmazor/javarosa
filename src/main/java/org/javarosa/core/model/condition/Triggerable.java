@@ -160,7 +160,7 @@ public abstract class Triggerable implements Externalizable {
             for (TreeReference affectedRef : v) {
                 apply(affectedRef, result, mainInstance);
 
-                affectedNodes.add(new EvaluationResult(affectedRef, result));
+                affectedNodes.add(new EvaluationResult(affectedRef, result, this, null, null));
             }
         }
 

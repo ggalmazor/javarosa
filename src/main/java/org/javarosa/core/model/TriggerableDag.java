@@ -70,7 +70,7 @@ public class TriggerableDag {
      * <p>
      * This set is used during the DAG build process.
      */
-    private final Set<QuickTriggerable> allTriggerables = new HashSet<>();
+    final Set<QuickTriggerable> allTriggerables = new HashSet<>();
 
     /**
      * Stores the sorted set of all triggerables using the dependency direction
@@ -104,7 +104,7 @@ public class TriggerableDag {
      * Note that there's a m:n relationship between trigger references and
      * triggerables.
      */
-    private final Map<TreeReference, Set<QuickTriggerable>> triggerablesPerTrigger = new HashMap<>();
+    final Map<TreeReference, Set<QuickTriggerable>> triggerablesPerTrigger = new HashMap<>();
 
     public TriggerableDag(EventNotifierAccessor accessor) {
         this.accessor = accessor;

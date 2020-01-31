@@ -366,14 +366,12 @@ public class TriggerableDagTest {
         ));
         scenario.next();
         scenario.answer(2);
-        // Notice how the calculate at number1_x2 gets evaluated even though it's in a non-relevant group
-        // and number1_x2_x2 doesn't get evaluated. The difference could be that the second field depends
-        // on a field that is inside a non-relevant group.
+        // Verify that all calculates are evaluates regardless of relevance of the fields they depend on
         assertThat(scenario.answerOf("/data/group/number1_x2"), is(intAnswer(4)));
-        // TODO figure out why group/number1_x2_x2 isn't evaluated once number1 gets a value. Should all expressions be evaluated regardless of relevance? In any case, describe and document which expressions are evaluated when
-        assertThat(scenario.answerOf("/data/group/number1_x2_x2"), is(nullValue()));
+        assertThat(scenario.answerOf("/data/group/number1_x2_x2"), is(intAnswer(8)));
         scenario.next();
         scenario.answer("1"); // Label: "yes"
+        // Verify that all calculates are evaluates regardless of relevance of the fields they depend on
         assertThat(scenario.answerOf("/data/group/number1_x2"), is(intAnswer(4)));
         assertThat(scenario.answerOf("/data/group/number1_x2_x2"), is(intAnswer(8)));
     }

@@ -30,6 +30,7 @@ import org.javarosa.core.util.externalizable.ExtWrapNullable;
 import org.javarosa.core.util.externalizable.ExtWrapTagged;
 import org.javarosa.core.util.externalizable.Externalizable;
 import org.javarosa.core.util.externalizable.PrototypeFactory;
+import org.javarosa.xpath.XPathConditional;
 
 /**
  * A data binding is an object that represents how a
@@ -56,7 +57,7 @@ public class DataBinding implements Externalizable {
     public boolean requiredAbsolute;
     public Triggerable readonlyCondition;
     public boolean readonlyAbsolute;
-    public IConditionExpr constraint;
+    public XPathConditional constraint;
     public Triggerable calculate;
 
     private String preload;

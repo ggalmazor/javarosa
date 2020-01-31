@@ -54,6 +54,10 @@ public final class QuickTriggerable {
         return triggerable.getTargets();
     }
 
+    public Set<TreeReference> getTriggers() {
+        return triggerable.getTriggers();
+    }
+
     public boolean contains(Triggerable triggerable) {
         return this.triggerable.equals(triggerable);
     }
