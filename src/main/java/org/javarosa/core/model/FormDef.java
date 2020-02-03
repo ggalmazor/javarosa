@@ -495,7 +495,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
             }
         }
 
-        dagImpl.deleteRepeatGroup(getMainInstance(), getEvaluationContext(), deleteRef, parentElement, deleteElement);
+        dagImpl.deleteRepeatGroup(getMainInstance(), getEvaluationContext().dontIgnoreIrrelevantNodes(), deleteRef, parentElement, deleteElement);
 
         return newIndex;
     }
@@ -516,7 +516,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         // Trigger actions nested in the new repeat
         getChild(index).getActionController().triggerActionsFromEvent(Action.EVENT_ODK_NEW_REPEAT, this, repeatContextRef, this);
 
-        dagImpl.createRepeatGroup(getMainInstance(), getEvaluationContext(), repeatContextRef, newNode);
+        dagImpl.createRepeatGroup(getMainInstance(), getEvaluationContext().dontIgnoreIrrelevantNodes(), repeatContextRef, newNode);
     }
 
     @Override
@@ -647,7 +647,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
                 getMainInstance().copyItemsetNode(ch.copyNode, destRef, this);
             }
         }
-        dagImpl.copyItemsetAnswer(getMainInstance(), getEvaluationContext(), destRef, targetNode);
+        dagImpl.copyItemsetAnswer(getMainInstance(), getEvaluationContext().dontIgnoreIrrelevantNodes(), destRef, targetNode);
     }
 
     /**
@@ -689,7 +689,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      */
     private Collection<QuickTriggerable> initializeTriggerables(TreeReference rootRef) {
 
-        return dagImpl.initializeTriggerables(getMainInstance(), getEvaluationContext(), rootRef);
+        return dagImpl.initializeTriggerables(getMainInstance(), getEvaluationContext().dontIgnoreIrrelevantNodes(), rootRef);
     }
 
     /**
@@ -699,7 +699,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      *            was changed.
      */
     public Collection<QuickTriggerable> triggerTriggerables(TreeReference ref) {
-        return dagImpl.triggerTriggerables(getMainInstance(), getEvaluationContext(), ref);
+        return dagImpl.triggerTriggerables(getMainInstance(), getEvaluationContext().dontIgnoreIrrelevantNodes(), ref);
     }
 
     public ValidateOutcome validate(boolean markCompleted) {

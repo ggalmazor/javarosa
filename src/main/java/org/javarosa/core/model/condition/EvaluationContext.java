@@ -40,6 +40,7 @@ public class EvaluationContext {
     private HashMap<String, IFunctionHandler> functionHandlers;
     private IFallbackFunctionHandler fallbackFunctionHandler;
     private HashMap<String, Object> variables;
+    private boolean ignoreIrrelevantNodes = true;
 
     public boolean isConstraint; //true if we are evaluating a constraint
     public IAnswerData candidateValue; //if isConstraint, this is the value being validated
@@ -69,6 +70,7 @@ public class EvaluationContext {
         fallbackFunctionHandler = base.fallbackFunctionHandler;
         formInstances = base.formInstances;
         variables = base.variables;
+        ignoreIrrelevantNodes = base.ignoreIrrelevantNodes;
 
         contextNode = base.contextNode;
         instance = base.instance;
@@ -384,5 +386,14 @@ public class EvaluationContext {
         if (loadingDetails != null && loadingDetails.length == 2) {
             predicateEvaluationProgress = loadingDetails;
         }
+    }
+
+    public boolean ignoreIrrelevantNodes() {
+        return ignoreIrrelevantNodes;
+    }
+
+    public EvaluationContext dontIgnoreIrrelevantNodes() {
+        ignoreIrrelevantNodes = false;
+        return this;
     }
 }

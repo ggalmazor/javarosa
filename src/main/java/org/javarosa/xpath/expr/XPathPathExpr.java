@@ -23,16 +23,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.javarosa.core.model.condition.EvaluationContext;
 import org.javarosa.core.model.condition.pivot.UnpivotableExpressionException;
 import org.javarosa.core.model.data.BooleanData;
 import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.DateTimeData;
 import org.javarosa.core.model.data.DecimalData;
-import org.javarosa.core.model.data.GeoTraceData;
 import org.javarosa.core.model.data.GeoPointData;
 import org.javarosa.core.model.data.GeoShapeData;
+import org.javarosa.core.model.data.GeoTraceData;
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.data.IntegerData;
 import org.javarosa.core.model.data.LongData;
@@ -223,7 +222,7 @@ public class XPathPathExpr extends XPathExpression {
             throw new XPathTypeMismatchException("Node " + ref.toString() + " does not exist!");
         }
 
-        IAnswerData maybeNodeValue = node.isRelevant() ? node.getValue() : null;
+        IAnswerData maybeNodeValue = ec.ignoreIrrelevantNodes() && !node.isRelevant() ? null : node.getValue();
         Object result = unpackValue(maybeNodeValue);
         if (maybeNodeValue == null) {
             logger.trace("getRefValue returning empty node value for {}", ref);
@@ -316,12 +315,12 @@ public class XPathPathExpr extends XPathExpression {
 
     /**
      * Warning: this method has somewhat unclear semantics.
-     *
+     * <p>
      * "matches" follows roughly the same process as equals(), in that it goes
      * through the path step by step and compares whether each step can refer to the same node.
      * The only difference is that match() will allow for a named step to match a step who's name
      * is a wildcard.
-     *
+     * <p>
      * So
      * \/data\/path\/to
      * will "match"
@@ -331,7 +330,6 @@ public class XPathPathExpr extends XPathExpression {
      * <p>
      * Matching is reflexive, consistent, and symmetric, but _not_ transitive.
      *
-     * @param o
      * @return true if the expression is a path that matches this one
      */
     public boolean matches(XPathExpression o) {

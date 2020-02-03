@@ -32,7 +32,8 @@ public class XPathPathExprEval {
         TreeReference ref = getContextualizedTreeReference(reference, ec);
         DataInstance dataInstance = getDataInstance(ec, ref);
         List<TreeReference> nodesetRefs = ec.expandReference(ref);
-        removeIrrelevantNodesets(dataInstance, nodesetRefs);
+        if (ec.ignoreIrrelevantNodes())
+            removeIrrelevantNodesets(dataInstance, nodesetRefs);
         return new XPathNodeset(nodesetRefs, dataInstance, ec);
     }
 
