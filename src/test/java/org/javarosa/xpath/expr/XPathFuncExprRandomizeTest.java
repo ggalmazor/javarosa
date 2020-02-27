@@ -184,13 +184,13 @@ public class XPathFuncExprRandomizeTest {
     }
 
     private List<SelectChoice> getSelectChoices(FormDef formDef, String ref) {
-        FormIndex formIndex = getFormIndex(formDef, absoluteRef(ref));
+        FormIndex formIndex = getFormIndex(formDef, getRef(ref));
         FormEntryPrompt formEntryPrompt = new FormEntryPrompt(formDef, formIndex);
         return formEntryPrompt.getSelectChoices();
     }
 
     private Object getAnswerValue(FormDef formDef, String ref) {
-        FormIndex formIndex = getFormIndex(formDef, absoluteRef(ref));
+        FormIndex formIndex = getFormIndex(formDef, getRef(ref));
         FormEntryPrompt formEntryPrompt = new FormEntryPrompt(formDef, formIndex);
         return formEntryPrompt.getAnswerValue().getValue();
     }
@@ -213,7 +213,7 @@ public class XPathFuncExprRandomizeTest {
         return true;
     }
 
-    private static TreeReference absoluteRef(String path) {
+    private static TreeReference getRef(String path) {
         TreeReference tr = new TreeReference();
         tr.setRefLevel(REF_ABSOLUTE);
         tr.setContext(CONTEXT_ABSOLUTE);
