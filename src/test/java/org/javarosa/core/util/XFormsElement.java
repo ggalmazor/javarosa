@@ -64,10 +64,10 @@ public interface XFormsElement {
 
     static XFormsElement html(XFormsElement... children) {
         return t("h:html " +
-                        "xmlns=\"http://www.w3.org/2002/xforms\" " +
-                        "xmlns:h=\"http://www.w3.org/1999/xhtml\" " +
-                        "xmlns:jr=\"http://openrosa.org/javarosa\"",
-                children
+                "xmlns=\"http://www.w3.org/2002/xforms\" " +
+                "xmlns:h=\"http://www.w3.org/1999/xhtml\" " +
+                "xmlns:jr=\"http://openrosa.org/javarosa\"",
+            children
         );
     }
 
@@ -89,6 +89,10 @@ public interface XFormsElement {
 
     static XFormsElement mainInstance(XFormsElement... children) {
         return t("instance", children);
+    }
+
+    static XFormsElement secondaryInstance(String id, XFormsElement... children) {
+        return t("instance id=\"" + id + "\"", t("root", children));
     }
 
 
@@ -122,8 +126,8 @@ public interface XFormsElement {
 
     static XFormsElement item(String value, String label) {
         return t("item",
-                t("label", label),
-                t("value", value)
+            t("label", label),
+            t("value", value)
         );
     }
 
