@@ -23,16 +23,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.javarosa.core.model.condition.EvaluationContext;
 import org.javarosa.core.model.condition.pivot.UnpivotableExpressionException;
 import org.javarosa.core.model.data.BooleanData;
 import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.DateTimeData;
 import org.javarosa.core.model.data.DecimalData;
-import org.javarosa.core.model.data.GeoTraceData;
 import org.javarosa.core.model.data.GeoPointData;
 import org.javarosa.core.model.data.GeoShapeData;
+import org.javarosa.core.model.data.GeoTraceData;
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.data.IntegerData;
 import org.javarosa.core.model.data.LongData;
@@ -143,6 +142,25 @@ public class XPathPathExpr extends XPathExpression {
                              */
                             parentsAllowed = true;
                             ref.setContext(TreeReference.CONTEXT_ORIGINAL);
+                            break;
+                        case "randomize":
+                            ref.setRefLevel(TreeReference.REF_ABSOLUTE); //i assume when refering the non main instance you have to be absolute
+
+                            parentsAllowed = false;
+                            if (func.args.length != 1 && func.args.length != 2) {
+                                throw new XPathUnsupportedException("randomize() function used with " + func.args.length + " arguments. Expecting 1 argument");
+                            }
+                            if (func.args[0] instanceof XPathFuncExpr) {
+                                XPathFuncExpr fn = (XPathFuncExpr) func.args[0];
+                                if (!fn.id.name.equals("instance"))
+                                    throw new XPathUnsupportedException("the first argument of a randomize() call is expected to be an instance(name) function");
+                                if (fn.args.length != 1)
+                                    throw new XPathUnsupportedException("the first argument of a randomize() call is expected to be an instance(name) function (found instance())");
+                                if (!(fn.args[0] instanceof XPathStringLiteral))
+                                    throw new XPathUnsupportedException("the first argument of a randomize() call is expected to be an instance(name) function (found instance(something else))");
+                                ref.setContext(TreeReference.CONTEXT_INSTANCE);
+                                ref.setInstanceName(((XPathStringLiteral) fn.args[0]).s);
+                            }
                             break;
                         default:
                             //We only support expression root contexts for instance refs, everything else is an illegal filter
@@ -316,12 +334,12 @@ public class XPathPathExpr extends XPathExpression {
 
     /**
      * Warning: this method has somewhat unclear semantics.
-     *
+     * <p>
      * "matches" follows roughly the same process as equals(), in that it goes
      * through the path step by step and compares whether each step can refer to the same node.
      * The only difference is that match() will allow for a named step to match a step who's name
      * is a wildcard.
-     *
+     * <p>
      * So
      * \/data\/path\/to
      * will "match"
@@ -331,7 +349,6 @@ public class XPathPathExpr extends XPathExpression {
      * <p>
      * Matching is reflexive, consistent, and symmetric, but _not_ transitive.
      *
-     * @param o
      * @return true if the expression is a path that matches this one
      */
     public boolean matches(XPathExpression o) {
