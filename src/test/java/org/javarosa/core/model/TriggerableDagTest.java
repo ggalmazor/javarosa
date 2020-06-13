@@ -1529,4 +1529,40 @@ public class TriggerableDagTest {
         LocalTime duration = LocalTime.fromMillisOfDay((System.nanoTime() - start) / 1_000_000);
         logger.info("Deletion of {} repeats took {}", numberOfRepeats, duration.toString());
     }
+
+    @Test
+    public void referenceToCalculatedRepeatCount_insideRepeat_updatesWhenCountChanges() throws IOException {
+        Scenario scenario = Scenario.init("Count outside repeat used inside", html(
+            head(
+                title("Count outside repeat used inside"),
+                model(
+                    mainInstance(t("data id=\"outside-used-inside\"",
+                        t("count"),
+
+                        t("repeat jr:template=\"\"",
+                            t("question"),
+                            t("inner-count"))
+                    )),
+                    bind("/data/count").type("int").calculate("count(/data/repeat)"),
+                    bind("/data/repeat/inner-count").type("int").calculate("/data/count")),
+
+                body(
+                    repeat("/data/repeat",
+                        input("/data/repeat/question")
+                    )
+                ))));
+
+        range(0, 5).forEach(n -> {
+            scenario.next();
+            scenario.createNewRepeat();
+            assertThat(scenario.answerOf("/data/count"), is(intAnswer(n + 1)));
+            scenario.next();
+        });
+
+        range(0, 5).forEach(n -> assertThat(scenario.answerOf("/data/repeat[" + n + "]/inner-count"), is(intAnswer(5))));
+
+        scenario.removeRepeat("/data/repeat[3]");
+
+        range(0, 4).forEach(n -> assertThat(scenario.answerOf("/data/repeat[" + n + "]/inner-count"), is(intAnswer(4))));
+    }
 }

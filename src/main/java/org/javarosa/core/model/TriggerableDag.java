@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -110,17 +111,48 @@ public class TriggerableDag {
         this.accessor = accessor;
     }
 
-    private Set<QuickTriggerable> doEvaluateTriggerables(FormInstance mainInstance, EvaluationContext evalContext, Set<QuickTriggerable> toTrigger, TreeReference anchorRef, Set<QuickTriggerable> alreadyEvaluated) {
-        Set<QuickTriggerable> fired = new HashSet<>();
+    private Set<QuickTriggerable> doEvaluateTriggerables(FormInstance mainInstance, EvaluationContext evalContext, Set<QuickTriggerable> tv, TreeReference anchorRef, Set<QuickTriggerable> alreadyEvaluated) {
+        // tv should now contain all of the triggerable components which are
+        // going
+        // to need to be addressed
+        // by this update.
+        // 'triggerables' is topologically-ordered by dependencies, so evaluate
+        // the triggerables in 'tv'
+        // in the order they appear in 'triggerables'
+        Set<QuickTriggerable> fired = new HashSet<QuickTriggerable>();
 
-        // Evaluate the provided set of triggerables in the order they appear
-        // in the sorted DAG to ensure the correct sequence of evaluations
-        for (QuickTriggerable qt : triggerablesDAG)
-            if (toTrigger.contains(qt) && !alreadyEvaluated.contains(qt)) {
-                evaluateTriggerable(mainInstance, evalContext, qt, anchorRef);
+        Map<TreeReference, List<TreeReference>> firedAnchors = new LinkedHashMap<TreeReference, List<TreeReference>>();
+
+        for (QuickTriggerable qt : triggerablesDAG) {
+            if (tv.contains(qt) && !alreadyEvaluated.contains(qt)) {
+
+                List<TreeReference> affectedTriggers = qt.getTriggerable().findAffectedTriggers(firedAnchors);
+                if (affectedTriggers.isEmpty()) {
+                    affectedTriggers.add(anchorRef);
+                }
+
+                List<EvaluationResult> evaluationResults = evaluateTriggerable(
+                    mainInstance, evalContext, qt, affectedTriggers);
+
+                if (evaluationResults.size() > 0) {
+                    fired.add(qt);
+
+                    for (EvaluationResult evaluationResult : evaluationResults) {
+                        TreeReference affectedRef = evaluationResult.getAffectedRef();
+
+                        TreeReference key = affectedRef.genericize();
+                        List<TreeReference> values = firedAnchors.get(key);
+                        if (values == null) {
+                            values = new ArrayList<TreeReference>();
+                            firedAnchors.put(key, values);
+                        }
+                        values.add(affectedRef);
+                    }
+                }
 
                 fired.add(qt);
             }
+        }
 
         return fired;
     }
@@ -129,22 +161,53 @@ public class TriggerableDag {
      * Step 3 in DAG cascade. evaluate the individual triggerable expressions
      * against the anchor (the value that changed which triggered recomputation)
      */
-    private void evaluateTriggerable(FormInstance mainInstance, EvaluationContext evalContext, QuickTriggerable triggerable, TreeReference anchorRef) {
-        // Contextualize the reference used by the triggerable against the anchor
-        TreeReference contextRef = triggerable.contextualizeContextRef(anchorRef);
+    private List<EvaluationResult> evaluateTriggerable(FormInstance mainInstance,
+                                                       EvaluationContext evalContext, QuickTriggerable qt,
+                                                       List<TreeReference> anchorRefs) {
 
-        List<EvaluationResult> evaluationResults = new ArrayList<>(0);
-        // Go through all of the fully qualified nodes which this triggerable
-        // updates. (Multiple nodes can be updated by the same trigger)
-        for (TreeReference qualified : evalContext.expandReference(contextRef))
-            try {
-                evaluationResults.addAll(triggerable.apply(mainInstance, new EvaluationContext(evalContext, qualified), qualified));
-            } catch (Exception e) {
-                throw new RuntimeException("Error evaluating field '" + contextRef.getNameLast() + "' (" + qualified + "): " + e.getMessage(), e);
+        List<EvaluationResult> evaluationResults = new ArrayList<EvaluationResult>(0);
+
+        // Contextualize the reference used by the triggerable against the
+        // anchor
+        Set<TreeReference> updatedContextRef = new HashSet<TreeReference>();
+
+        for (TreeReference anchorRef : anchorRefs) {
+            TreeReference contextRef = qt.getTriggerable().contextualizeContextRef(anchorRef);
+            if (updatedContextRef.contains(contextRef)) {
+                continue;
             }
 
-        if (evaluationResults.size() > 0)
-            accessor.getEventNotifier().publishEvent(new Event(triggerable.isCondition() ? "Condition" : "Recalculate", evaluationResults));
+            try {
+
+                // Now identify all of the fully qualified nodes which this
+                // triggerable
+                // updates. (Multiple nodes can be updated by the same trigger)
+                List<TreeReference> qualifiedList = evalContext
+                    .expandReference(contextRef);
+
+                // Go through each one and evaluate the trigger expression
+                for (TreeReference qualified : qualifiedList) {
+                    EvaluationContext ec = new EvaluationContext(evalContext,
+                        qualified);
+                    evaluationResults.addAll(qt.getTriggerable().apply(mainInstance, ec,
+                        qualified));
+                }
+
+                boolean fired = evaluationResults.size() > 0;
+                if (fired) {
+                    accessor.getEventNotifier().publishEvent(
+                        new Event(qt.getTriggerable().getClass().getSimpleName(),
+                            evaluationResults));
+                }
+
+                updatedContextRef.add(contextRef);
+            } catch (Exception e) {
+                throw new RuntimeException("Error evaluating field '"
+                    + contextRef.getNameLast() + "': " + e.getMessage(), e);
+            }
+        }
+
+        return evaluationResults;
     }
 
     private Set<QuickTriggerable> initializeTriggerables(FormInstance mainInstance, EvaluationContext evalContext, TreeReference rootRef, Set<QuickTriggerable> alreadyEvaluated) {
