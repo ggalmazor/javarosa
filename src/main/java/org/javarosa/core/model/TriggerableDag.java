@@ -165,7 +165,7 @@ public class TriggerableDag {
                                                        EvaluationContext evalContext, QuickTriggerable qt,
                                                        List<TreeReference> anchorRefs) {
 
-        List<EvaluationResult> evaluationResults = new ArrayList<>(0);
+        List<EvaluationResult> evaluationResults = new ArrayList<>();
 
         // Contextualize the reference used by the triggerable against the
         // anchor
@@ -735,7 +735,7 @@ public class TriggerableDag {
     }
 
     private static List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap, Set<TreeReference> triggers) {
-        List<TreeReference> affectedTriggers = new ArrayList<>(0);
+        List<TreeReference> affectedTriggers = new ArrayList<>();
 
         for (TreeReference trigger : triggers) {
             List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
