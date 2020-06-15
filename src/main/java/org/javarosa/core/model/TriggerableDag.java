@@ -125,12 +125,65 @@ public class TriggerableDag {
                 // as contexts for the evaluation of this triggerable.
                 // By using the affectedAnchors map, we ensure we don't miss any reference that could have been changed by another
                 // triggerable in the toTrigger set.
-                List<TreeReference> affectedTriggers = findAffectedTriggers(affectedAnchors, qt.getTriggerable().getTriggers());
+                List<TreeReference> affectedTriggers1 = new ArrayList<>();
+
+                for (TreeReference trigger : qt.getTriggerable().getTriggers())
+                    affectedTriggers1.addAll(affectedAnchors.containsKey(trigger.genericize())
+                        ? affectedAnchors.get(trigger.genericize())
+                        : emptyList());
+
+                List<TreeReference> affectedTriggers = affectedTriggers1;
                 // Ensure we at least have the provided anchorRef
                 if (affectedTriggers.isEmpty())
                     affectedTriggers.add(anchorRef);
 
-                List<EvaluationResult> evaluationResults = evaluateTriggerable(mainInstance, evalContext, qt, affectedTriggers);
+                List<EvaluationResult> evaluationResults1 = new ArrayList<>();
+
+                Set<TreeReference> updatedContextRef = new HashSet<>();
+                for (TreeReference anchorRef1 : affectedTriggers) {
+                    TreeReference contextRef = qt.getTriggerable().contextualizeContextRef(anchorRef1);
+                    // Avoid evaluating twice with the same contextualized ref, which would
+                    // waste computing time.
+                    if (updatedContextRef.contains(contextRef))
+                        continue;
+
+                    try {
+                        // Evaluate the triggerable with all the expanded refs that the contextRef expands to
+                        for (TreeReference qualified : evalContext.expandReference(contextRef)) {
+                            Triggerable triggerable = qt.getTriggerable();
+                            //The triggeringRoot is the highest level of actual data we can inquire about, but it _isn't_ necessarily the basis
+                            //for the actual expressions, so we need genericize that ref against the current context
+                            TreeReference ungenericised = triggerable.getOriginalContext().contextualize(qualified);
+                            EvaluationContext ec = new EvaluationContext(new EvaluationContext(evalContext, qualified), ungenericised);
+
+                            Object result = triggerable.eval(mainInstance, ec);
+
+                            List<EvaluationResult> affectedNodes = new ArrayList<>(0);
+                            for (TreeReference target : triggerable.getTargets()) {
+                                TreeReference targetRef = target.contextualize(ec.getContextRef());
+                                List<TreeReference> v = ec.expandReference(targetRef);
+
+                                for (TreeReference affectedRef : v) {
+                                    triggerable.apply(affectedRef, result, mainInstance);
+
+                                    affectedNodes.add(new EvaluationResult(affectedRef, result));
+                                }
+                            }
+
+                            List<EvaluationResult> results = affectedNodes;
+                            evaluationResults1.addAll(results);
+                        }
+
+                        if (evaluationResults1.size() > 0)
+                            accessor.getEventNotifier().publishEvent(new Event(qt.getTriggerable().getClass().getSimpleName(), evaluationResults1));
+
+                        updatedContextRef.add(contextRef);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error evaluating field '" + contextRef.getNameLast() + "': " + e.getMessage(), e);
+                    }
+                }
+
+                List<EvaluationResult> evaluationResults = evaluationResults1;
 
                 // Now add to the affectedTriggerables all the refs affected by the evaluation of this triggerable
                 // to be considered by the next triggerable to be evaluated in toTrigger
@@ -147,44 +200,6 @@ public class TriggerableDag {
         }
 
         return affectedTriggerables;
-    }
-
-    /**
-     * Step 3 in DAG cascade. evaluate the individual triggerable expressions
-     * against the anchor (the value that changed which triggered recomputation)
-     */
-    private List<EvaluationResult> evaluateTriggerable(FormInstance mainInstance, EvaluationContext evalContext, QuickTriggerable qt, List<TreeReference> anchorRefs) {
-        List<EvaluationResult> evaluationResults = new ArrayList<>();
-
-        Set<TreeReference> updatedContextRef = new HashSet<>();
-        for (TreeReference anchorRef : anchorRefs) {
-            TreeReference contextRef = qt.getTriggerable().contextualizeContextRef(anchorRef);
-            // Avoid evaluating twice with the same contextualized ref, which would
-            // waste computing time.
-            if (updatedContextRef.contains(contextRef))
-                continue;
-
-            try {
-                // Evaluate the triggerable with all the expanded refs that the contextRef expands to
-                for (TreeReference qualified : evalContext.expandReference(contextRef)) {
-                    List<EvaluationResult> results = qt.getTriggerable().apply(
-                        mainInstance,
-                        new EvaluationContext(evalContext, qualified),
-                        qualified
-                    );
-                    evaluationResults.addAll(results);
-                }
-
-                if (evaluationResults.size() > 0)
-                    accessor.getEventNotifier().publishEvent(new Event(qt.getTriggerable().getClass().getSimpleName(), evaluationResults));
-
-                updatedContextRef.add(contextRef);
-            } catch (Exception e) {
-                throw new RuntimeException("Error evaluating field '" + contextRef.getNameLast() + "': " + e.getMessage(), e);
-            }
-        }
-
-        return evaluationResults;
     }
 
     private Set<QuickTriggerable> initializeTriggerables(FormInstance mainInstance, EvaluationContext evalContext, TreeReference rootRef, Set<QuickTriggerable> alreadyEvaluated) {
@@ -709,17 +724,6 @@ public class TriggerableDag {
 
             throw new RuntimeException("Dependency cycles amongst the xpath expressions in relevant/calculate");
         }
-    }
-
-    private static List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap, Set<TreeReference> triggers) {
-        List<TreeReference> affectedTriggers = new ArrayList<>();
-
-        for (TreeReference trigger : triggers)
-            affectedTriggers.addAll(firedAnchorsMap.containsKey(trigger.genericize())
-                ? firedAnchorsMap.get(trigger.genericize())
-                : emptyList());
-
-        return affectedTriggers;
     }
 
     // region External Serialization

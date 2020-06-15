@@ -97,7 +97,7 @@ public abstract class Triggerable implements Externalizable {
 
     public abstract Object eval(FormInstance instance, EvaluationContext ec);
 
-    protected abstract void apply(TreeReference ref, Object result, FormInstance mainInstance);
+    public abstract void apply(TreeReference ref, Object result, FormInstance mainInstance);
 
     public abstract boolean canCascade();
 
@@ -111,32 +111,6 @@ public abstract class Triggerable implements Externalizable {
         // Contextualize the reference used by the triggerable against
         // the anchor
         return contextRef.contextualize(anchorRef);
-    }
-
-    /**
-     * Dispatches all of the evaluation
-     */
-    public final List<EvaluationResult> apply(FormInstance mainInstance, EvaluationContext parentContext, TreeReference context) {
-        //The triggeringRoot is the highest level of actual data we can inquire about, but it _isn't_ necessarily the basis
-        //for the actual expressions, so we need genericize that ref against the current context
-        TreeReference ungenericised = originalContextRef.contextualize(context);
-        EvaluationContext ec = new EvaluationContext(parentContext, ungenericised);
-
-        Object result = eval(mainInstance, ec);
-
-        List<EvaluationResult> affectedNodes = new ArrayList<>(0);
-        for (TreeReference target : targets) {
-            TreeReference targetRef = target.contextualize(ec.getContextRef());
-            List<TreeReference> v = ec.expandReference(targetRef);
-
-            for (TreeReference affectedRef : v) {
-                apply(affectedRef, result, mainInstance);
-
-                affectedNodes.add(new EvaluationResult(affectedRef, result));
-            }
-        }
-
-        return affectedNodes;
     }
 
     public Set<TreeReference> getTargets() {

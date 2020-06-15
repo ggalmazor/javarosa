@@ -1,5 +1,6 @@
 package org.javarosa.core.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.javarosa.core.model.condition.Condition;
@@ -39,10 +40,6 @@ public final class QuickTriggerable {
 
     TreeReference contextualizeContextRef(TreeReference anchorRef) {
         return triggerable.contextualizeContextRef(anchorRef);
-    }
-
-    public List<EvaluationResult> apply(FormInstance mainInstance, EvaluationContext ec, TreeReference qualified) {
-        return triggerable.apply(mainInstance, ec, qualified);
     }
 
     Set<TreeReference> getTargets() {
