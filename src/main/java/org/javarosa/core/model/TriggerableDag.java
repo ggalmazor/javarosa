@@ -111,7 +111,7 @@ public class TriggerableDag {
         this.accessor = accessor;
     }
 
-    private Set<QuickTriggerable> doEvaluateTriggerables(FormInstance mainInstance, EvaluationContext evalContext, Set<QuickTriggerable> tv, TreeReference anchorRef, Set<QuickTriggerable> alreadyEvaluated) {
+    private Set<QuickTriggerable> doEvaluateTriggerables(FormInstance mainInstance, EvaluationContext evalContext, Set<QuickTriggerable> toTrigger, TreeReference anchorRef, Set<QuickTriggerable> alreadyEvaluated) {
         // tv should now contain all of the triggerable components which are
         // going
         // to need to be addressed
@@ -119,14 +119,14 @@ public class TriggerableDag {
         // 'triggerables' is topologically-ordered by dependencies, so evaluate
         // the triggerables in 'tv'
         // in the order they appear in 'triggerables'
-        Set<QuickTriggerable> fired = new HashSet<>();
+        Set<QuickTriggerable> affectedTriggerables = new HashSet<>();
 
-        Map<TreeReference, List<TreeReference>> firedAnchors = new LinkedHashMap<>();
+        Map<TreeReference, List<TreeReference>> affectedAnchors = new LinkedHashMap<>();
 
         for (QuickTriggerable qt : triggerablesDAG) {
-            if (tv.contains(qt) && !alreadyEvaluated.contains(qt)) {
+            if (toTrigger.contains(qt) && !alreadyEvaluated.contains(qt)) {
 
-                List<TreeReference> affectedTriggers = findAffectedTriggers(firedAnchors, qt.getTriggerable().getTriggers());
+                List<TreeReference> affectedTriggers = findAffectedTriggers(affectedAnchors, qt.getTriggerable().getTriggers());
                 if (affectedTriggers.isEmpty()) {
                     affectedTriggers.add(anchorRef);
                 }
@@ -135,26 +135,26 @@ public class TriggerableDag {
                     mainInstance, evalContext, qt, affectedTriggers);
 
                 if (evaluationResults.size() > 0) {
-                    fired.add(qt);
+                    affectedTriggerables.add(qt);
 
                     for (EvaluationResult evaluationResult : evaluationResults) {
                         TreeReference affectedRef = evaluationResult.getAffectedRef();
 
                         TreeReference key = affectedRef.genericize();
-                        List<TreeReference> values = firedAnchors.get(key);
+                        List<TreeReference> values = affectedAnchors.get(key);
                         if (values == null) {
                             values = new ArrayList<>();
-                            firedAnchors.put(key, values);
+                            affectedAnchors.put(key, values);
                         }
                         values.add(affectedRef);
                     }
                 }
 
-                fired.add(qt);
+                affectedTriggerables.add(qt);
             }
         }
 
-        return fired;
+        return affectedTriggerables;
     }
 
     /**
