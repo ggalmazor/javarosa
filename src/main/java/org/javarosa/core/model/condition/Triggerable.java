@@ -159,10 +159,7 @@ public abstract class Triggerable implements Externalizable {
         if (!expr.equals(other.expr))
             return false;
 
-        // Both must have the same set of triggers
-        if (getTriggers().size() != other.getTriggers().size())
-            return false;
-        if (!getTriggers().containsAll(other.getTriggers()))
+        if (!originalContextRef.equals(other.originalContextRef))
             return false;
 
         return true;
