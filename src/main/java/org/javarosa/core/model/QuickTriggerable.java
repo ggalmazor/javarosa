@@ -1,7 +1,5 @@
 package org.javarosa.core.model;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import org.javarosa.core.model.condition.Condition;
 import org.javarosa.core.model.condition.EvaluationContext;
@@ -9,7 +7,6 @@ import org.javarosa.core.model.condition.Recalculate;
 import org.javarosa.core.model.condition.Triggerable;
 import org.javarosa.core.model.instance.FormInstance;
 import org.javarosa.core.model.instance.TreeReference;
-import org.javarosa.debug.EvaluationResult;
 
 /**
  * This is a thin wrapper class over Triggerable that provides quicker implementation of the equals() method.
