@@ -16,6 +16,7 @@
 
 package org.javarosa.core.model;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
 import java.io.DataInputStream;
@@ -125,10 +126,9 @@ public class TriggerableDag {
                 // By using the affectedAnchors map, we ensure we don't miss any reference that could have been changed by another
                 // triggerable in the toTrigger set.
                 List<TreeReference> affectedTriggers = findAffectedTriggers(affectedAnchors, qt.getTriggerable().getTriggers());
-                if (affectedTriggers.isEmpty()) {
-                    // Ensure we at least have the provided anchorRef
+                // Ensure we at least have the provided anchorRef
+                if (affectedTriggers.isEmpty())
                     affectedTriggers.add(anchorRef);
-                }
 
                 List<EvaluationResult> evaluationResults = evaluateTriggerable(mainInstance, evalContext, qt, affectedTriggers);
 
@@ -159,25 +159,24 @@ public class TriggerableDag {
         Set<TreeReference> updatedContextRef = new HashSet<>();
         for (TreeReference anchorRef : anchorRefs) {
             TreeReference contextRef = qt.getTriggerable().contextualizeContextRef(anchorRef);
-            if (updatedContextRef.contains(contextRef)) {
-                // Avoid evaluating twice with the same contextualized ref, which would
-                // waste computing time.
+            // Avoid evaluating twice with the same contextualized ref, which would
+            // waste computing time.
+            if (updatedContextRef.contains(contextRef))
                 continue;
-            }
 
             try {
-                List<TreeReference> qualifiedList = evalContext.expandReference(contextRef);
-
                 // Evaluate the triggerable with all the expanded refs that the contextRef expands to
-                for (TreeReference qualified : qualifiedList) {
-                    EvaluationContext ec = new EvaluationContext(evalContext, qualified);
-                    evaluationResults.addAll(qt.getTriggerable().apply(mainInstance, ec, qualified));
+                for (TreeReference qualified : evalContext.expandReference(contextRef)) {
+                    List<EvaluationResult> results = qt.getTriggerable().apply(
+                        mainInstance,
+                        new EvaluationContext(evalContext, qualified),
+                        qualified
+                    );
+                    evaluationResults.addAll(results);
                 }
 
-                boolean fired = evaluationResults.size() > 0;
-                if (fired) {
+                if (evaluationResults.size() > 0)
                     accessor.getEventNotifier().publishEvent(new Event(qt.getTriggerable().getClass().getSimpleName(), evaluationResults));
-                }
 
                 updatedContextRef.add(contextRef);
             } catch (Exception e) {
@@ -715,11 +714,10 @@ public class TriggerableDag {
     private static List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap, Set<TreeReference> triggers) {
         List<TreeReference> affectedTriggers = new ArrayList<>();
 
-        for (TreeReference trigger : triggers) {
-            List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
-            if (firedAnchors != null)
-                affectedTriggers.addAll(firedAnchors);
-        }
+        for (TreeReference trigger : triggers)
+            affectedTriggers.addAll(firedAnchorsMap.containsKey(trigger.genericize())
+                ? firedAnchorsMap.get(trigger.genericize())
+                : emptyList());
 
         return affectedTriggers;
     }
