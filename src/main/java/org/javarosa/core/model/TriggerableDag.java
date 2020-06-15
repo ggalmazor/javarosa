@@ -131,8 +131,7 @@ public class TriggerableDag {
                     affectedTriggers.add(anchorRef);
                 }
 
-                List<EvaluationResult> evaluationResults = evaluateTriggerable(
-                    mainInstance, evalContext, qt, affectedTriggers);
+                List<EvaluationResult> evaluationResults = evaluateTriggerable(mainInstance, evalContext, qt, affectedTriggers);
 
                 for (EvaluationResult evaluationResult : evaluationResults) {
                     TreeReference affectedRef = evaluationResult.getAffectedRef();
@@ -153,10 +152,7 @@ public class TriggerableDag {
      * Step 3 in DAG cascade. evaluate the individual triggerable expressions
      * against the anchor (the value that changed which triggered recomputation)
      */
-    private List<EvaluationResult> evaluateTriggerable(FormInstance mainInstance,
-                                                       EvaluationContext evalContext, QuickTriggerable qt,
-                                                       List<TreeReference> anchorRefs) {
-
+    private List<EvaluationResult> evaluateTriggerable(FormInstance mainInstance, EvaluationContext evalContext, QuickTriggerable qt, List<TreeReference> anchorRefs) {
         List<EvaluationResult> evaluationResults = new ArrayList<>();
 
         // Contextualize the reference used by the triggerable against the
@@ -174,28 +170,23 @@ public class TriggerableDag {
                 // Now identify all of the fully qualified nodes which this
                 // triggerable
                 // updates. (Multiple nodes can be updated by the same trigger)
-                List<TreeReference> qualifiedList = evalContext
-                    .expandReference(contextRef);
+                List<TreeReference> qualifiedList = evalContext.expandReference(contextRef);
 
                 // Go through each one and evaluate the trigger expression
                 for (TreeReference qualified : qualifiedList) {
-                    EvaluationContext ec = new EvaluationContext(evalContext,
-                        qualified);
-                    evaluationResults.addAll(qt.getTriggerable().apply(mainInstance, ec,
-                        qualified));
+                    EvaluationContext ec = new EvaluationContext(evalContext, qualified);
+                    evaluationResults.addAll(qt.getTriggerable().apply(mainInstance, ec, qualified));
                 }
 
                 boolean fired = evaluationResults.size() > 0;
                 if (fired) {
                     accessor.getEventNotifier().publishEvent(
-                        new Event(qt.getTriggerable().getClass().getSimpleName(),
-                            evaluationResults));
+                        new Event(qt.getTriggerable().getClass().getSimpleName(), evaluationResults));
                 }
 
                 updatedContextRef.add(contextRef);
             } catch (Exception e) {
-                throw new RuntimeException("Error evaluating field '"
-                    + contextRef.getNameLast() + "': " + e.getMessage(), e);
+                throw new RuntimeException("Error evaluating field '" + contextRef.getNameLast() + "': " + e.getMessage(), e);
             }
         }
 
