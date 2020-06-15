@@ -112,10 +112,6 @@ public class TriggerableDag {
     }
 
     private Set<QuickTriggerable> doEvaluateTriggerables(FormInstance mainInstance, EvaluationContext evalContext, Set<QuickTriggerable> toTrigger, TreeReference anchorRef, Set<QuickTriggerable> alreadyEvaluated) {
-        // tv should now contain all of the triggerable components which are
-        // going
-        // to need to be addressed
-        // by this update.
         // 'triggerables' is topologically-ordered by dependencies, so evaluate
         // the triggerables in 'tv'
         // in the order they appear in 'triggerables'
