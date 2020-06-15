@@ -134,16 +134,12 @@ public class TriggerableDag {
                 List<EvaluationResult> evaluationResults = evaluateTriggerable(
                     mainInstance, evalContext, qt, affectedTriggers);
 
-                if (evaluationResults.size() > 0) {
-                    affectedTriggerables.add(qt);
-
-                    for (EvaluationResult evaluationResult : evaluationResults) {
-                        TreeReference affectedRef = evaluationResult.getAffectedRef();
-                        TreeReference key = affectedRef.genericize();
-                        if (!affectedAnchors.containsKey(key))
-                            affectedAnchors.put(key, new ArrayList<>());
-                        affectedAnchors.get(key).add(affectedRef);
-                    }
+                for (EvaluationResult evaluationResult : evaluationResults) {
+                    TreeReference affectedRef = evaluationResult.getAffectedRef();
+                    TreeReference key = affectedRef.genericize();
+                    if (!affectedAnchors.containsKey(key))
+                        affectedAnchors.put(key, new ArrayList<>());
+                    affectedAnchors.get(key).add(affectedRef);
                 }
 
                 affectedTriggerables.add(qt);
