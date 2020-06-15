@@ -739,11 +739,8 @@ public class TriggerableDag {
 
         for (TreeReference trigger : triggers) {
             List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
-            if (firedAnchors == null) {
-                continue;
-            }
-
-            affectedTriggers.addAll(firedAnchors);
+            if (firedAnchors != null)
+                affectedTriggers.addAll(firedAnchors);
         }
 
         return affectedTriggers;
