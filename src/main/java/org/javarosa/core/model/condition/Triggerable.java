@@ -158,12 +158,16 @@ public abstract class Triggerable implements Externalizable {
 
         Triggerable other = (Triggerable) o;
 
+        // Both must have the same original context
+        if (!originalContextRef.equals(other.originalContextRef))
+            return false;
+
         // Both must have the same expression
         if (!expr.equals(other.expr))
             return false;
 
-        if (!originalContextRef.equals(other.originalContextRef))
-            return false;
+        // Triggers checking at this point would be redundant because
+        // we already checked that the expr and the originalContext are equal
 
         return true;
     }
