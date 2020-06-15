@@ -224,20 +224,4 @@ public abstract class Triggerable implements Externalizable {
     }
 
     // endregion
-
-    public List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap) {
-        List<TreeReference> affectedTriggers = new ArrayList<TreeReference>(0);
-
-        Set<TreeReference> triggers = this.getTriggers();
-        for (TreeReference trigger : triggers) {
-            List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
-            if (firedAnchors == null) {
-                continue;
-            }
-
-            affectedTriggers.addAll(firedAnchors);
-        }
-
-        return affectedTriggers;
-    }
 }

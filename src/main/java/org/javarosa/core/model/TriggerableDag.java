@@ -126,7 +126,7 @@ public class TriggerableDag {
         for (QuickTriggerable qt : triggerablesDAG) {
             if (tv.contains(qt) && !alreadyEvaluated.contains(qt)) {
 
-                List<TreeReference> affectedTriggers = qt.getTriggerable().findAffectedTriggers(firedAnchors);
+                List<TreeReference> affectedTriggers = findAffectedTriggers(firedAnchors, qt.getTriggerable().getTriggers());
                 if (affectedTriggers.isEmpty()) {
                     affectedTriggers.add(anchorRef);
                 }
@@ -732,6 +732,21 @@ public class TriggerableDag {
 
             throw new RuntimeException("Dependency cycles amongst the xpath expressions in relevant/calculate");
         }
+    }
+
+    private static List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap, Set<TreeReference> triggers) {
+        List<TreeReference> affectedTriggers = new ArrayList<TreeReference>(0);
+
+        for (TreeReference trigger : triggers) {
+            List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
+            if (firedAnchors == null) {
+                continue;
+            }
+
+            affectedTriggers.addAll(firedAnchors);
+        }
+
+        return affectedTriggers;
     }
 
     // region External Serialization
