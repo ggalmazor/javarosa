@@ -60,6 +60,8 @@ public abstract class Triggerable implements Externalizable {
      */
     private Set<TreeReference> targets;
 
+    private Set<TreeReference> triggers;
+
     /**
      * Current reference which is the "Basis" of the trigerrables being evaluated. This is the highest
      * common root of all of the targets being evaluated.
@@ -85,6 +87,7 @@ public abstract class Triggerable implements Externalizable {
         this.contextRef = contextRef;
         this.originalContextRef = originalContextRef;
         this.immediateCascades = immediateCascades;
+        this.triggers = expr.getTriggers(originalContextRef);
     }
 
     public static Triggerable condition(XPathConditional expr, ConditionAction trueAction, ConditionAction falseAction, TreeReference contextRef) {
@@ -104,7 +107,7 @@ public abstract class Triggerable implements Externalizable {
     public abstract boolean isCascadingToChildren();
 
     public Set<TreeReference> getTriggers() {
-        return expr.getTriggers(originalContextRef);
+        return triggers;
     }
 
     public TreeReference contextualizeContextRef(TreeReference anchorRef) {
@@ -184,6 +187,7 @@ public abstract class Triggerable implements Externalizable {
         contextRef = (TreeReference) ExtUtil.read(in, TreeReference.class, pf);
         originalContextRef = (TreeReference) ExtUtil.read(in, TreeReference.class, pf);
         targets = new HashSet<>((List<TreeReference>) ExtUtil.read(in, new ExtWrapList(TreeReference.class), pf));
+        triggers = expr.getTriggers(originalContextRef);
     }
 
     @Override
