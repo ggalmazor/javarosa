@@ -119,9 +119,9 @@ public class TriggerableDag {
         // 'triggerables' is topologically-ordered by dependencies, so evaluate
         // the triggerables in 'tv'
         // in the order they appear in 'triggerables'
-        Set<QuickTriggerable> fired = new HashSet<QuickTriggerable>();
+        Set<QuickTriggerable> fired = new HashSet<>();
 
-        Map<TreeReference, List<TreeReference>> firedAnchors = new LinkedHashMap<TreeReference, List<TreeReference>>();
+        Map<TreeReference, List<TreeReference>> firedAnchors = new LinkedHashMap<>();
 
         for (QuickTriggerable qt : triggerablesDAG) {
             if (tv.contains(qt) && !alreadyEvaluated.contains(qt)) {
@@ -143,7 +143,7 @@ public class TriggerableDag {
                         TreeReference key = affectedRef.genericize();
                         List<TreeReference> values = firedAnchors.get(key);
                         if (values == null) {
-                            values = new ArrayList<TreeReference>();
+                            values = new ArrayList<>();
                             firedAnchors.put(key, values);
                         }
                         values.add(affectedRef);
@@ -165,11 +165,11 @@ public class TriggerableDag {
                                                        EvaluationContext evalContext, QuickTriggerable qt,
                                                        List<TreeReference> anchorRefs) {
 
-        List<EvaluationResult> evaluationResults = new ArrayList<EvaluationResult>(0);
+        List<EvaluationResult> evaluationResults = new ArrayList<>(0);
 
         // Contextualize the reference used by the triggerable against the
         // anchor
-        Set<TreeReference> updatedContextRef = new HashSet<TreeReference>();
+        Set<TreeReference> updatedContextRef = new HashSet<>();
 
         for (TreeReference anchorRef : anchorRefs) {
             TreeReference contextRef = qt.getTriggerable().contextualizeContextRef(anchorRef);
@@ -735,7 +735,7 @@ public class TriggerableDag {
     }
 
     private static List<TreeReference> findAffectedTriggers(Map<TreeReference, List<TreeReference>> firedAnchorsMap, Set<TreeReference> triggers) {
-        List<TreeReference> affectedTriggers = new ArrayList<TreeReference>(0);
+        List<TreeReference> affectedTriggers = new ArrayList<>(0);
 
         for (TreeReference trigger : triggers) {
             List<TreeReference> firedAnchors = firedAnchorsMap.get(trigger.genericize());
