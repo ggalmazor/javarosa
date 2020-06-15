@@ -130,14 +130,8 @@ public class TriggerableDag {
     }
 
     private void evaluateTriggerable(FormInstance mainInstance, EvaluationContext originalEvaluationContext, TreeReference changedRef, Map<TreeReference, List<TreeReference>> changedRefsPerGenericTriggerRef, QuickTriggerable triggerable) {
-        Set<TreeReference> updatedContextRef = new HashSet<>();
         for (TreeReference baseContextRef : getBaseContextRefs(changedRef, changedRefsPerGenericTriggerRef, triggerable)) {
             TreeReference contextRef = triggerable.getTriggerable().getContext().contextualize(baseContextRef);
-            // Avoid evaluating twice with the same contextualized ref, which would
-            // waste computing time.
-            // TODO: Remove by replacing it with a Set
-            if (updatedContextRef.contains(contextRef))
-                continue;
 
             List<EvaluationResult> evaluationResults = new ArrayList<>();
 
@@ -181,8 +175,6 @@ public class TriggerableDag {
 
             if (evaluationResults.size() > 0)
                 accessor.getEventNotifier().publishEvent(new Event(triggerable.getTriggerable().getClass().getSimpleName(), evaluationResults));
-
-            updatedContextRef.add(contextRef);
         }
     }
 
@@ -193,19 +185,18 @@ public class TriggerableDag {
         changedRefsPerGenericTriggerRef.get(key).add(qualifiedTarget);
     }
 
-    private List<TreeReference> getBaseContextRefs(TreeReference anchorRef, Map<TreeReference, List<TreeReference>> affectedAnchors, QuickTriggerable qt) {
+    private Set<TreeReference> getBaseContextRefs(TreeReference anchorRef, Map<TreeReference, List<TreeReference>> affectedAnchors, QuickTriggerable qt) {
         // We need to produce an initial set (the set is then expanded by evaluateTriggerable) of references to be used
         // as contexts for the evaluation of this triggerable.
         // By using the affectedAnchors map, we ensure we don't miss any reference that could have been changed by another
         // triggerable in the toTrigger set.
-        List<TreeReference> affectedTriggers1 = new ArrayList<>();
+        Set<TreeReference> affectedTriggers = new HashSet<>();
 
         for (TreeReference trigger : qt.getTriggerable().getTriggers())
-            affectedTriggers1.addAll(affectedAnchors.containsKey(trigger.genericize())
+            affectedTriggers.addAll(affectedAnchors.containsKey(trigger.genericize())
                 ? affectedAnchors.get(trigger.genericize())
                 : emptyList());
 
-        List<TreeReference> affectedTriggers = affectedTriggers1;
         // Ensure we at least have the provided anchorRef
         if (affectedTriggers.isEmpty())
             affectedTriggers.add(anchorRef);
