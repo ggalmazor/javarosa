@@ -177,8 +177,7 @@ public class TriggerableDag {
 
                 boolean fired = evaluationResults.size() > 0;
                 if (fired) {
-                    accessor.getEventNotifier().publishEvent(
-                        new Event(qt.getTriggerable().getClass().getSimpleName(), evaluationResults));
+                    accessor.getEventNotifier().publishEvent(new Event(qt.getTriggerable().getClass().getSimpleName(), evaluationResults));
                 }
 
                 updatedContextRef.add(contextRef);
