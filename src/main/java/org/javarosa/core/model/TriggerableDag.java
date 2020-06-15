@@ -112,9 +112,7 @@ public class TriggerableDag {
     }
 
     private Set<QuickTriggerable> doEvaluateTriggerables(FormInstance mainInstance, EvaluationContext evalContext, Set<QuickTriggerable> toTrigger, TreeReference anchorRef, Set<QuickTriggerable> alreadyEvaluated) {
-
         Set<QuickTriggerable> affectedTriggerables = new HashSet<>();
-
         Map<TreeReference, List<TreeReference>> affectedAnchors = new LinkedHashMap<>();
 
         // Instead of iterating the toTrigger set of triggerables, use the DAG's ordered set of triggerables
@@ -122,14 +120,20 @@ public class TriggerableDag {
         // which ensures that dependencies between them are not broken
         for (QuickTriggerable qt : triggerablesDAG) {
             if (toTrigger.contains(qt) && !alreadyEvaluated.contains(qt)) {
-
+                // We need to produce an initial set (the set is then expanded by evaluateTriggerable) of references to be used
+                // as contexts for the evaluation of this triggerable.
+                // By using the affectedAnchors map, we ensure we don't miss any reference that could have been changed by another
+                // triggerable in the toTrigger set.
                 List<TreeReference> affectedTriggers = findAffectedTriggers(affectedAnchors, qt.getTriggerable().getTriggers());
                 if (affectedTriggers.isEmpty()) {
+                    // Ensure we at least have the provided anchorRef
                     affectedTriggers.add(anchorRef);
                 }
 
                 List<EvaluationResult> evaluationResults = evaluateTriggerable(mainInstance, evalContext, qt, affectedTriggers);
 
+                // Now add to the affectedTriggerables all the refs affected by the evaluation of this triggerable
+                // to be considered by the next triggerable to be evaluated in toTrigger
                 for (EvaluationResult evaluationResult : evaluationResults) {
                     TreeReference affectedRef = evaluationResult.getAffectedRef();
                     TreeReference key = affectedRef.genericize();
@@ -152,24 +156,19 @@ public class TriggerableDag {
     private List<EvaluationResult> evaluateTriggerable(FormInstance mainInstance, EvaluationContext evalContext, QuickTriggerable qt, List<TreeReference> anchorRefs) {
         List<EvaluationResult> evaluationResults = new ArrayList<>();
 
-        // Contextualize the reference used by the triggerable against the
-        // anchor
         Set<TreeReference> updatedContextRef = new HashSet<>();
-
         for (TreeReference anchorRef : anchorRefs) {
             TreeReference contextRef = qt.getTriggerable().contextualizeContextRef(anchorRef);
             if (updatedContextRef.contains(contextRef)) {
+                // Avoid evaluating twice with the same contextualized ref, which would
+                // waste computing time.
                 continue;
             }
 
             try {
-
-                // Now identify all of the fully qualified nodes which this
-                // triggerable
-                // updates. (Multiple nodes can be updated by the same trigger)
                 List<TreeReference> qualifiedList = evalContext.expandReference(contextRef);
 
-                // Go through each one and evaluate the trigger expression
+                // Evaluate the triggerable with all the expanded refs that the contextRef expands to
                 for (TreeReference qualified : qualifiedList) {
                     EvaluationContext ec = new EvaluationContext(evalContext, qualified);
                     evaluationResults.addAll(qt.getTriggerable().apply(mainInstance, ec, qualified));
