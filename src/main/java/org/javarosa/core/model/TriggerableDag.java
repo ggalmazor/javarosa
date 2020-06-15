@@ -139,14 +139,10 @@ public class TriggerableDag {
 
                     for (EvaluationResult evaluationResult : evaluationResults) {
                         TreeReference affectedRef = evaluationResult.getAffectedRef();
-
                         TreeReference key = affectedRef.genericize();
-                        List<TreeReference> values = affectedAnchors.get(key);
-                        if (values == null) {
-                            values = new ArrayList<>();
-                            affectedAnchors.put(key, values);
-                        }
-                        values.add(affectedRef);
+                        if (!affectedAnchors.containsKey(key))
+                            affectedAnchors.put(key, new ArrayList<>());
+                        affectedAnchors.get(key).add(affectedRef);
                     }
                 }
 
